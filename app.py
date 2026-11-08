@@ -126,7 +126,7 @@ with st.sidebar:
     if st.button(
         '분석 시작',
         type='primary',
-        disabled=not ready,
+        disabled=page.url_path == home_page.url_path or not ready,
         use_container_width=True,
     ):
         clear_analysis()
