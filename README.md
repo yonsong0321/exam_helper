@@ -4,11 +4,11 @@
 
 제작: 가천대학교 오윤성 · 202434793
 
-URL : https://examapper-48k9q6tjgiyfyog7g8sqwv.streamlit.app/
+배포 URL: [영어학원 평가 도우미 바로가기](https://examapper-docrvo6ofqnklkek4ecb4v.streamlit.app/)
 
 ## 사용 방법
 
-1. 화면 상단에서 **시험 분석** 페이지로 이동합니다.
+1. 위 배포 URL로 접속한 뒤 화면 상단의 **시험 분석** 페이지로 이동합니다.
 2. 왼쪽 사이드바에 **문제지 PDF**, **정답 PDF**, **OMR 응답 XLSX**를 각각 업로드합니다.
 3. **분석 시작**을 누르면 정답과 배점을 추출하고 학생 응답을 채점합니다.
 4. 화면에서 학생 수, 평균, 중앙값, 만점을 확인합니다. **학생별 성적과 오답 현황 보기**를 펼치면 상세 결과가 표시됩니다.
@@ -36,7 +36,7 @@ OMR 파일은 `OMR_응답` 시트를 우선 사용하고, 해당 시트가 없�
 - 학생명은 비어 있거나 중복되어서는 안 됩니다. 동명이인은 서로 구분되는 식별자를 사용합니다.
 - 선택지는 `1`~`5` 또는 `①`~`⑤`로 입력합니다. 빈 셀과 `0`은 무응답으로 처리합니다.
 - 정답 PDF와 OMR의 문항번호가 일치해야 합니다. 누락되거나 추가된 문항 열이 있으면 분석을 진행하지 않습니다.
-- 학생 응답은 최대 10,000명까지 지원합니다. 큰 자료는 채팅 요청량과 처리시간이 증가할 수 있습니다.
+- OMR 입력은 최대 10,000명까지 허용합니다. 채팅 가능 규모는 모델의 입력 한도와 API 사용 한도에 따라 달라지며, 큰 자료는 처리시간이 증가하거나 요청이 실패할 수 있습니다.
 
 ## 채점 결과와 엑셀
 
@@ -96,7 +96,7 @@ OPENAI_REASONING_EFFORT = "low"
 
 `OPENAI_REASONING_EFFORT`는 기본 모델의 추론 강도이며, 기본값은 `low`입니다. `medium`, `high`, `xhigh`, `max`도 설정할 수 있으나 응답시간과 사용량이 늘어날 수 있습니다. 질문 해석은 최대 10초, 문제 생성까지의 전체 처리 예산은 약 18초이며 네트워크·화면 처리시간이 별도로 발생할 수 있습니다. 실제 배포 환경에서 응답시간을 확인해 주세요.
 
-`OPENAI_MODEL`을 생략하면 기본 모델인 `gpt-6.1-sol`를 사용합니다. 다른 모델을 지정할 경우 이 앱의 이미지 입력과 JSON 응답 요청을 지원해야 합니다. 같은 이름의 환경변수로도 설정할 수 있으며, Streamlit Secrets 값이 우선 적용됩니다. `.env` 파일은 자동으로 읽지 않습니다.
+`OPENAI_MODEL`을 생략하면 기본 모델인 `gpt-6.1-sol`을 사용합니다. 다른 모델을 지정할 경우 이 앱의 이미지 입력과 JSON 응답 요청을 지원해야 합니다. 같은 이름의 환경변수로도 설정할 수 있으며, Streamlit Secrets 값이 우선 적용됩니다. `.env` 파일은 자동으로 읽지 않습니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -m streamlit run app.py
@@ -108,7 +108,7 @@ OPENAI_REASONING_EFFORT = "low"
 
 1. `app.py`, `core.py`, `chat.py`, `conversation.py`, `queries.py`, `requirements.txt` 등 프로젝트 파일을 GitHub 저장소에 올립니다.
 2. Streamlit Community Cloud에서 저장소와 브랜치를 선택하고 실행 파일 경로를 `app.py`로 지정합니다. 하위 폴더에 있다면 해당 경로를 포함합니다.
-3. 앱의 Secrets에 위와 같은 형식으로 `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`를 등록합니다. 기존 Secrets에 이전 모델명이 있다면 새 모델명으로 교체합니다.
+3. 앱의 Secrets에 위와 같은 형식으로 `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`를 등록합니다. Secrets에 지정한 모델명이 코드의 기본 모델보다 우선 적용됩니다.
 4. 배포 후 파일 업로드, 분석, 엑셀 다운로드, 채팅을 확인합니다.
 
 Cloud에서는 로컬 `secrets.toml` 대신 배포 앱의 Secrets를 설정합니다. 키를 교체한 뒤에도 이전 설정이 적용되면 앱을 재시작하고 다시 확인합니다.
