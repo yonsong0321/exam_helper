@@ -32,8 +32,8 @@ def suspicious(text):
 
 class Model:
     def __init__(self, key='', name='gpt-4.1-mini'):
-        self.key = key
-        self.name = name
+        self.key = key.strip() if isinstance(key, str) else ''
+        self.name = name.strip() if isinstance(name, str) else 'gpt-4.1-mini'
 
     def json(self, system, content, timeout=15, tokens=1600):
         if not self.key:
@@ -53,7 +53,31 @@ class Model:
                     raise ModelError('답변이 완성되지 않았습니다. 다시 요청해 주세요.')
                 return json.loads(item['message']['content'])
             except HTTPError as exc:
-                raise ModelError('LLM 연결을 확인해 주세요. API 키·사용 한도·모델 설정을 점검해야 합니다.') from exc
+                try:
+                    payload = json.loads(exc.read().decode('utf-8', errors='replace'))
+                    error = payload.get('error', {})
+                    code = str(error.get('code') or error.get('type') or 'unknown')
+                    message = str(error.get('message') or '')
+                except (ValueError, AttributeError, TypeError):
+                    code, message = 'unknown', ''
+                detail = f'{code}: {message}'
+                if self.key:
+                    detail = detail.replace(self.key, '[API 키 숨김]')
+                detail = re.sub(r'sk-[A-Za-z0-9_*.-]+', '[API 키 숨김]', detail)
+                detail = re.sub(r'Bearer\s+\S+', 'Bearer [숨김]', detail, flags=re.I)
+                if code == 'insufficient_quota':
+                    hint = 'OpenAI API 크레딧 또는 프로젝트 사용 한도를 확인해 주세요.'
+                elif exc.code == 401:
+                    hint = 'Cloud Secrets의 OPENAI_API_KEY가 유효한 OpenAI API 키인지 확인해 주세요.'
+                elif exc.code == 429:
+                    hint = 'API 요청량 제한에 도달했습니다. 잠시 후 다시 시도해 주세요.'
+                elif exc.code in (403, 404):
+                    hint = '프로젝트 권한과 OPENAI_MODEL의 모델 접근 권한을 확인해 주세요.'
+                elif exc.code == 400:
+                    hint = 'API가 요청 형식을 거절했습니다. 아래 오류 원인을 확인해 주세요.'
+                else:
+                    hint = 'API 서비스 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+                raise ModelError(f'{hint}\n\nHTTP {exc.code} · {detail[:600]}') from exc
             except (URLError, ValueError, KeyError, IndexError, TimeoutError) as exc:
                 raise ModelError('LLM 응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요.') from exc
         pool = ThreadPoolExecutor(max_workers=1)
