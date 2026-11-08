@@ -63,6 +63,8 @@ OMR 파일은 `OMR_응답` 시트를 우선 사용하고, 해당 시트가 없�
 - “그 문항과 같은 유형으로 연습문제 하나 만들어줘.”
 - “방금 만든 문제의 정답이 왜 ③인지 설명해줘.”
 
+평균·중앙값·표준편차, 최고점·최저점, 학생별 점수·오답, 학생 순위 조회는 질문을 해석한 뒤 코드가 실제 데이터로 정해진 형식의 답변을 작성합니다. 학생 순위는 동점을 공동 순위로 처리하며 다음 순위는 동점자 수만큼 건너뜁니다. 순위 표현이 모호하면 정렬 방향을 확인합니다. 자료에 없는 정보와 내부 정보 공개 요청에는 각각 정해진 안내 또는 거절 문구를 사용합니다.
+
 최근 대화, 누적 대화 요약, 최근 생성한 연습문제를 활용해 후속 질문에 답합니다. 오래된 대화의 세부 내용이 모두 유지되는 것은 아니므로, 필요한 경우 학생명이나 문항번호를 함께 적어 주세요. 순위나 지칭이 모호하면 챗봇이 의미를 확인할 수 있습니다. 출석 등 업로드 자료에 없는 정보는 조회할 수 없습니다.
 
 연습문제는 한 번에 한 개씩 생성하며, 지문·질문·선택지 5개·정답·한국어 해설을 제공합니다. 기준 문항의 평가 능력과 형식을 참고해 새로운 내용을 만듭니다. 듣기 유형은 새로운 연습 대본을 만들며 원본 음원을 복원하지 않습니다. 원문을 읽지 못한 문항은 문제 생성이 제한됩니다. 생성된 정답과 해설은 수업이나 시험에 활용하기 전에 검토해 주세요.
@@ -88,10 +90,13 @@ python -m venv .venv
 
 ```toml
 OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
-OPENAI_MODEL = "gpt-4.1-mini"
+OPENAI_MODEL = "gpt-6.1-sol"
+OPENAI_REASONING_EFFORT = "low"
 ```
 
-`OPENAI_MODEL`을 생략하면 기본 모델인 `gpt-4.1-mini`를 사용합니다. 다른 모델을 지정할 경우 이 앱의 이미지 입력과 JSON 응답 요청을 지원해야 합니다. 같은 이름의 환경변수로도 설정할 수 있으며, Streamlit Secrets 값이 우선 적용됩니다. `.env` 파일은 자동으로 읽지 않습니다.
+`OPENAI_REASONING_EFFORT`는 기본 모델의 추론 강도이며, 기본값은 `low`입니다. `medium`, `high`, `xhigh`, `max`도 설정할 수 있으나 응답시간과 사용량이 늘어날 수 있습니다. 질문 해석은 최대 10초, 문제 생성까지의 전체 처리 예산은 약 18초이며 네트워크·화면 처리시간이 별도로 발생할 수 있습니다. 실제 배포 환경에서 응답시간을 확인해 주세요.
+
+`OPENAI_MODEL`을 생략하면 기본 모델인 `gpt-6.1-sol`를 사용합니다. 다른 모델을 지정할 경우 이 앱의 이미지 입력과 JSON 응답 요청을 지원해야 합니다. 같은 이름의 환경변수로도 설정할 수 있으며, Streamlit Secrets 값이 우선 적용됩니다. `.env` 파일은 자동으로 읽지 않습니다.
 
 ```powershell
 .\.venv\Scripts\python.exe -m streamlit run app.py
@@ -101,9 +106,9 @@ OPENAI_MODEL = "gpt-4.1-mini"
 
 ## Streamlit Community Cloud 배포
 
-1. `app.py`, `core.py`, `chat.py`, `conversation.py`, `requirements.txt` 등 프로젝트 파일을 GitHub 저장소에 올립니다.
+1. `app.py`, `core.py`, `chat.py`, `conversation.py`, `queries.py`, `requirements.txt` 등 프로젝트 파일을 GitHub 저장소에 올립니다.
 2. Streamlit Community Cloud에서 저장소와 브랜치를 선택하고 실행 파일 경로를 `app.py`로 지정합니다. 하위 폴더에 있다면 해당 경로를 포함합니다.
-3. 앱의 Secrets에 위와 같은 형식으로 `OPENAI_API_KEY`와 필요한 경우 `OPENAI_MODEL`을 등록합니다.
+3. 앱의 Secrets에 위와 같은 형식으로 `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_REASONING_EFFORT`를 등록합니다. 기존 Secrets에 이전 모델명이 있다면 새 모델명으로 교체합니다.
 4. 배포 후 파일 업로드, 분석, 엑셀 다운로드, 채팅을 확인합니다.
 
 Cloud에서는 로컬 `secrets.toml` 대신 배포 앱의 Secrets를 설정합니다. 키를 교체한 뒤에도 이전 설정이 적용되면 앱을 재시작하고 다시 확인합니다.
@@ -135,6 +140,7 @@ Cloud에서는 로컬 `secrets.toml` 대신 배포 앱의 Secrets를 설정합�
 |---|---|
 | `app.py` | 페이지, 파일 업로드, 분석 실행, 다운로드, 채팅 화면 |
 | `core.py` | PDF·XLSX 읽기, 입력 검증, 채점, 통계, 엑셀 출력 |
+| `queries.py` | 성적 조회·순위 계산, 고정 응답, 명확한 내부 도구 공개 요청 차단 |
 | `conversation.py` | 분석 데이터에 근거한 대화, 대화 요약과 맥락 관리 |
 | `chat.py` | OpenAI API 호출, 문제 생성, 응답 형식 검증과 오류 안내 |
 | `requirements.txt` | 실행에 필요한 Python 패키지 |

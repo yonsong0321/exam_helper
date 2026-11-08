@@ -9,6 +9,8 @@ from urllib.error import HTTPError, URLError
 
 import pypdfium2 as pdfium
 
+DEFAULT_MODEL = 'gpt-6.1-sol'
+DEFAULT_REASONING_EFFORT = 'low'
 
 HELP = ('자동 채점 결과의 평균·중앙값·표준편차, 학생별 점수, 최저점 학생, '
         '문항별 오답 현황을 알려드리고 유사 문제를 만들 수 있어요. '
@@ -31,9 +33,10 @@ def suspicious(text):
 
 
 class Model:
-    def __init__(self, key='', name='gpt-4.1-mini'):
+    def __init__(self, key='', name=DEFAULT_MODEL, reasoning_effort=DEFAULT_REASONING_EFFORT):
         self.key = key.strip() if isinstance(key, str) else ''
-        self.name = name.strip() if isinstance(name, str) else 'gpt-4.1-mini'
+        self.name = (name.strip() if isinstance(name, str) else '') or DEFAULT_MODEL
+        self.reasoning_effort = reasoning_effort.strip() if isinstance(reasoning_effort, str) else DEFAULT_REASONING_EFFORT
 
     def json(self, system, content, timeout=15, tokens=1600):
         if not self.key:
@@ -41,6 +44,12 @@ class Model:
         body = {'model': self.name, 'messages': [{'role': 'system', 'content': system},
                 {'role': 'user', 'content': content}], 'response_format': {'type': 'json_object'},
                 'max_completion_tokens': tokens}
+        if self.name == DEFAULT_MODEL or self.name.startswith(DEFAULT_MODEL + '-'):
+            if self.reasoning_effort not in ('low', 'medium', 'high', 'xhigh', 'max'):
+                raise ModelError('OPENAI_REASONING_EFFORT는 low, medium, high, xhigh, max 중 하나여야 합니다.')
+            body['reasoning_effort'] = self.reasoning_effort
+            # Completion tokens include hidden reasoning as well as visible JSON.
+            body['max_completion_tokens'] = max(tokens, 4096)
         def request():
             req = Request('https://api.openai.com/v1/chat/completions',
                           data=json.dumps(body).encode(),

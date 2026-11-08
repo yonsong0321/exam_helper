@@ -17,6 +17,8 @@ class ExamTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.folder = Path(__file__).resolve().parents[2]
+        if (cls.folder / '최종평가').is_dir():
+            cls.folder = cls.folder / '최종평가'
         problems = list(cls.folder.glob('*영어-문제.pdf'))
         if not problems:
             raise unittest.SkipTest('원본 평가 자료를 프로젝트 상위 폴더에 놓아 주세요.')

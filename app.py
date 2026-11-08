@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from core import InputError, analyze, export_excel
-from chat import Model
+from chat import Model, DEFAULT_MODEL, DEFAULT_REASONING_EFFORT
 from conversation import answer
 
 st.set_page_config(page_title='영어학원 평가 도우미', page_icon='📘', layout='wide')
@@ -88,7 +88,8 @@ def analysis_view():
     if prompt:
         with st.chat_message('user'):
             st.write(prompt)
-        model = Model(setting('OPENAI_API_KEY'), setting('OPENAI_MODEL', 'gpt-4.1-mini'))
+        model = Model(setting('OPENAI_API_KEY'), setting('OPENAI_MODEL', DEFAULT_MODEL),
+                      setting('OPENAI_REASONING_EFFORT', DEFAULT_REASONING_EFFORT))
         start = time.monotonic()
         with st.chat_message('assistant'):
             with st.spinner('확인하고 있어요…'):
